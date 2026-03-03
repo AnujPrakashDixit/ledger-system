@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const ledgerModel = require("./ledger.model");
 
 const accountSchema = new mongoose.Schema({
 
@@ -14,7 +15,7 @@ const accountSchema = new mongoose.Schema({
             values: ["ACTIVE", "FROZEN", "CLOSED"],
             message: "Status must be either ACTIVE, FROZEN, or CLOSED",
         },
-        default:"ACTIVE"
+        default: "ACTIVE"
     },
     currency: {
         type: String,
@@ -27,6 +28,10 @@ const accountSchema = new mongoose.Schema({
 })
 
 accountSchema.index({ user: 1, status: 1 });
+
+accountSchema.methods.getBalance = async function () {
+
+}
 
 
 

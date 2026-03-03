@@ -40,9 +40,9 @@ const sendEmail = async (to, subject, text, html) => {
 };
 
 async function sendRegistrationEmail(email, name) {
-    const subject = 'Welcome to Backend Ledger!';
-    const text = `Dear ${name}, welcome to Backend Ledger! We're excited to have you on board.`;
-    const html = `<p>Dear ${name}, welcome to Backend Ledger! We're excited to have you on board.</p>`;
+    const subject = 'Welcome to Passa World!';
+    const text = `Dear ${name}, Welcome to Passa World! We're excited to have you on board.`;
+    const html = `<p>Dear ${name}, Welcome to Passa World! We're excited to have you on board.</p>`;
     await sendEmail(email, subject, text, html);
 }
 
