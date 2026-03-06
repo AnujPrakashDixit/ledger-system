@@ -1,5 +1,7 @@
 const trasactionModel = require("../models/transaction.model");
 const accountModel = require("../models/account.model");
+const mongoose = require("mongoose");
+const emailService = require("../services/email.service");
 
 
 async function createTransactionController(req, res) {
@@ -84,6 +86,60 @@ async function createTransactionController(req, res) {
      * 
      */
 
-    const balancce = await fromUserAccount.getBalance();
+    const balanace = await fromUserAccount.getBalance();
+
+
+    if(balance < amount){
+        return res.status(400).json({
+            message:`Insufficient balance. Current balance is ${balance}, Requested amount is ${amount}`
+        })
+    }
+
+    /**
+     * 5. Create transaction with status PENDING
+     */
+
+    const session = await mongoose.startSession();
+
+    session.startTransaction();
+
+    const transaction = await trasactionModel.create({
+        fromAccount,
+        toAccount,
+        amount,
+        idempotencyKey,
+        status:"PENDING"
+    },{ session });
+
+    const debitLedgerEntry = await ledgerModel.create({
+        account: fromAccount,
+        type: "DEBIT",
+        amount,
+        transaction: transaction._id
+    },{ session });
+
+    const creditLedgerEntry = await ledgerModel.create({
+        account: toAccount,
+        type: "CREDIT",
+        amount,
+        transaction: transaction._id
+    },{ session });
+
+    transaction.status = "COMPLETED";
+
+    await transaction.save({ session });
+
+    await session.commitTransaction();
+
+    session.endSession();
+
+    await emailService.sendTransactionEmail(req.user.email, req.user.name, amount, fromAccount, toAccount);
+
+    return res.status(201).json({
+        message: "Transaction successful",
+        transaction
+    });
 
 }
+
+  module.exports = { createTransactionController };
