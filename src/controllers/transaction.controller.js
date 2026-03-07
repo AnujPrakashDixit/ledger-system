@@ -1,5 +1,6 @@
-const trasactionModel = require("../models/transaction.model");
+const transactionModel = require("../models/transaction.model");
 const accountModel = require("../models/account.model");
+const ledgerModel = require("../models/ledger.model");
 const mongoose = require("mongoose");
 const emailService = require("../services/email.service");
 
@@ -161,7 +162,6 @@ async function createInitialFundsTransactionController(req, res) {
     }
 
     const fromUserAccount = await accountModel.findOne({
-        systemUser: true,
         user: req.user._id
     });
 
@@ -171,41 +171,51 @@ async function createInitialFundsTransactionController(req, res) {
         })
     }
 
-    const session = await mongoose.startSession();
+    try {
+        const session = await mongoose.startSession();
 
-    session.startTransaction();
-    const transaction = await trasactionModel.create({
-        fromAccount: fromUserAccount._id,
-        toAccount,
-        amount,
-        idempotencyKey,
-        status: "PENDING"
-    }, { session });
+        await session.startTransaction();
+        const [transaction] = await transactionModel.create([{
+            fromAccount: fromUserAccount._id,
+            toAccount,
+            amount,
+            idempotencyKey,
+            status: "PENDING"
+        }], { session });
 
-    const debitLedgerEntry = await ledgerModel.create({
-        account: fromUserAccount._id,
-        type: "DEBIT",
-        amount,
-        transaction: transaction._id
-    }, { session });
 
-    const creditLedgerEntry = await ledgerModel.create({
-        account: toAccount,
-        type: "CREDIT",
-        amount,
-        transaction: transaction._id
-    }, { session });
+        const debitLedgerEntry = await ledgerModel.create([
+            {
+                account: fromUserAccount._id,
+                type: "DEBIT",
+                amount,
+                transaction: transaction._id
+            }], { session });
 
-    transaction.status = "COMPLETED";
+        const creditLedgerEntry = await ledgerModel.create([{
+            account: toAccount,
+            type: "CREDIT",
+            amount,
+            transaction: transaction._id
+        }], { session });
 
-    await transaction.save({ session });
-    await session.commitTransaction();
-    session.endSession();
+        transaction.status = "COMPLETED";
 
-    return res.status(201).json({
-        message: "Initial funds transaction successful",
-        transaction
-    });
+        await transaction.save({ session });
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(201).json({
+            message: "Initial funds transaction successful",
+            transaction
+        })
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            message: "Initial funds transaction failed",
+            error: err.message
+        })
+    }
 
 }
 
