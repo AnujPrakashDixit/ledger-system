@@ -32,4 +32,35 @@ async function authMiddleware(req,res,next){
     }
 }
 
-module.exports = { authMiddleware};
+async function authSystemUserMiddleware(req,res,next){
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+
+    if(!token){
+        return res.status(401).json({
+            success:false,
+            message:"Authentication token is missing"
+        })
+    }
+
+    try{
+        const decoded = jwt.verify(token,process.env.JWT_SECRET);
+        const user = await userModel.findById(decoded.userId).select("+systemUser");
+        if(!user || user.systemUser==false){
+            return res.status(403).json({
+                success:false,
+                message:"Access denied. System user credentials required."
+            })
+        }
+        req.user = user;
+        return next();
+    }
+    catch(err){
+        console.log(err);
+        return res.status(401).json({
+            success:false,
+            message:"Invalid or expired authentication token"
+        })
+    }
+}
+
+module.exports = { authMiddleware, authSystemUserMiddleware };
