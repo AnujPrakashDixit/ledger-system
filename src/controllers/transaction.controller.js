@@ -33,7 +33,7 @@ async function createTransactionController(req, res) {
      * 2. Validate idempotency key
      */
 
-    const isTransactionAlreadyExists = await trasactionModel.findOne({
+    const isTransactionAlreadyExists = await transactionModel.findOne({
         idempotencyKey
     })
 
@@ -76,7 +76,7 @@ async function createTransactionController(req, res) {
         });
     }
 
-    if (isFromAccountValid !== "ACTIVE" || isToAccountValid !== "ACTIVE") {
+    if (isFromAccountValid.status !== "ACTIVE" || isToAccountValid.status !== "ACTIVE") {
         return res.status(400).json({
             message: "Account is FROZEN or CLOSED"
         })
@@ -87,7 +87,7 @@ async function createTransactionController(req, res) {
      * 
      */
 
-    const balanace = await fromUserAccount.getBalance();
+    const balance = await fromUserAccount.getBalance();
 
 
     if (balance < amount) {
@@ -100,47 +100,56 @@ async function createTransactionController(req, res) {
      * 5. Create transaction with status PENDING
      */
 
-    const session = await mongoose.startSession();
+    try {
+        const session = await mongoose.startSession();
 
-    session.startTransaction();
+        session.startTransaction();
 
-    const transaction = await trasactionModel.create({
-        fromAccount,
-        toAccount,
-        amount,
-        idempotencyKey,
-        status: "PENDING"
-    }, { session });
+        const [transaction] = await transactionModel.create([{
+            fromAccount,
+            toAccount,
+            amount,
+            idempotencyKey,
+            status: "PENDING"
+        }], { session });
 
-    const debitLedgerEntry = await ledgerModel.create({
-        account: fromAccount,
-        type: "DEBIT",
-        amount,
-        transaction: transaction._id
-    }, { session });
+        const debitLedgerEntry = await ledgerModel.create([{
+            account: fromAccount,
+            type: "DEBIT",
+            amount,
+            transaction: transaction._id
+        }], { session });
 
-    const creditLedgerEntry = await ledgerModel.create({
-        account: toAccount,
-        type: "CREDIT",
-        amount,
-        transaction: transaction._id
-    }, { session });
+        const creditLedgerEntry = await ledgerModel.create([{
+            account: toAccount,
+            type: "CREDIT",
+            amount,
+            transaction: transaction._id
+        }], { session });
 
-    transaction.status = "COMPLETED";
+        transaction.status = "COMPLETED";
 
-    await transaction.save({ session });
+        await transaction.save({ session });
 
-    await session.commitTransaction();
+        await session.commitTransaction();
 
-    session.endSession();
+        session.endSession();
 
-    await emailService.sendTransactionEmail(req.user.email, req.user.name, amount, fromAccount, toAccount);
+        await emailService.sendTransactionEmail(req.user.email, req.user.name, amount, fromAccount, toAccount);
 
-    return res.status(201).json({
-        message: "Transaction successful",
-        transaction
-    });
+        return res.status(201).json({
+            message: "Transaction successful",
+            transaction
+        });
 
+    }
+    catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            message: "Transaction failed",
+            error: err.message
+        })
+    }
 }
 
 async function createInitialFundsTransactionController(req, res) {

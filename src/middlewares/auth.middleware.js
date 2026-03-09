@@ -1,21 +1,36 @@
 const userModel = require("../models/user.model");
+const tokenBlacklistModel = require("../models/blacklist.model");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 
-async function authMiddleware(req,res,next){
+async function authMiddleware(req, res, next) {
 
     const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
 
-    if(!token){
+    if (!token) {
         return res.status(401).json({
-            success:false,
-            message:"Authentication token is missing"
+            success: false,
+            message: "Authentication token is missing"
         })
     }
 
-    try{
-        const decoded = jwt.verify(token,process.env.JWT_SECRET);
+
+    const isBlacklisted = await tokenBlacklistModel.findOne({
+        token
+    });
+
+    if (isBlacklisted) {
+        return res.status(401).json({
+            success: false,
+            message: "Token has been blacklisted. Please log in again."
+        })
+    }
+
+
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await userModel.findById(decoded.userId);
 
         req.user = user;
@@ -23,42 +38,53 @@ async function authMiddleware(req,res,next){
 
 
     }
-    catch(err){
+    catch (err) {
         console.log(err);
         return res.status(401).json({
-            success:false,
-            message:"Invalid or expired authentication token"
+            success: false,
+            message: "Invalid or expired authentication token"
         })
     }
 }
 
-async function authSystemUserMiddleware(req,res,next){
+async function authSystemUserMiddleware(req, res, next) {
     const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
 
-    if(!token){
+    if (!token) {
         return res.status(401).json({
-            success:false,
-            message:"Authentication token is missing"
+            success: false,
+            message: "Authentication token is missing"
         })
     }
 
-    try{
-        const decoded = jwt.verify(token,process.env.JWT_SECRET);
+    const isBlacklisted = await tokenBlacklistModel.findOne({
+        token
+    });
+
+    if (isBlacklisted) {
+        return res.status(401).json({
+            success: false,
+            message: "Token has been blacklisted. Please log in again."
+        })
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await userModel.findById(decoded.userId).select("+systemUser");
-        if(!user || user.systemUser==false){
+        if (!user || user.systemUser == false) {
             return res.status(403).json({
-                success:false,
-                message:"Access denied. System user credentials required."
+                success: false,
+                message: "Access denied. System user credentials required."
             })
         }
         req.user = user;
         return next();
     }
-    catch(err){
+    catch (err) {
         console.log(err);
         return res.status(401).json({
-            success:false,
-            message:"Invalid or expired authentication token"
+            success: false,
+            message: "Invalid or expired authentication token"
         })
     }
 }
