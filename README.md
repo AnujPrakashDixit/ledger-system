@@ -93,8 +93,6 @@ ledger-system/
 | `POST` | `/accounts` | Create a new account |
 | `GET` | `/accounts/:id` | Get account details |
 | `POST` | `/transactions` | Record a transaction (debit/credit) |
-| `GET` | `/accounts/:id/transactions` | Get transaction history for an account |
-| `GET` | `/accounts/:id/balance` | Get current balance |
 
 > **Note:** Update this section with the actual routes defined in `src/`.
 
