@@ -1,10 +1,10 @@
-# 🏦 Ledger System
+# Ledger System
 
 A **Bank Ledger System** built with Node.js that manages financial transactions and account balances.
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [About](#about)
 - [Features](#features)
