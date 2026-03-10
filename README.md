@@ -11,8 +11,6 @@ A **Bank Ledger System** built with Node.js that manages financial transactions 
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
 - [Project Structure](#project-structure)
-- [API Endpoints](#api-endpoints)
-- [Contributing](#contributing)
 
 ---
 
@@ -83,30 +81,6 @@ ledger-system/
 ├── jsconfig.json         # JavaScript configuration
 └── .gitignore
 ```
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/accounts` | Create a new account |
-| `GET` | `/accounts/:id` | Get account details |
-| `POST` | `/transactions` | Record a transaction (debit/credit) |
-
-> **Note:** Update this section with the actual routes defined in `src/`.
-
----
-
-## Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests.
-
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -m 'Add your feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
 
 ---
 
