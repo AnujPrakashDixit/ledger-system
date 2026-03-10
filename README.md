@@ -1,6 +1,6 @@
 # Ledger System
 
-A **Bank Ledger System** built with Node.js that manages financial transactions and account balances.
+A **Bank Ledger System** built with Node.js and Express that manages user authentication, accounts, and financial transactions.
 
 ---
 
@@ -11,22 +11,26 @@ A **Bank Ledger System** built with Node.js that manages financial transactions 
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
 - [Project Structure](#project-structure)
+- [API Endpoints](#api-endpoints)
+- [Contributing](#contributing)
 
 ---
 
 ## About
 
-The Ledger System is a backend application that simulates core banking ledger functionality — enabling users to create accounts, record transactions (credits and debits), and query account balances with full transaction history.
+The Ledger System is a backend REST API that simulates core banking ledger functionality — enabling users to register, authenticate, create bank accounts, and record financial transactions securely.
 
 ---
 
 ## Features
 
-- Create and manage bank accounts
-- Record debit and credit transactions
-- View current account balance
-- Fetch transaction history per account
-- RESTful API design
+- User registration, login, and logout with cookie-based auth
+- Create and manage bank accounts per user
+- View all accounts belonging to a user
+- Check account balance
+- Record financial transactions between accounts
+- System-level endpoint for seeding initial funds
+- Route protection via auth middleware
 
 ---
 
@@ -36,6 +40,7 @@ The Ledger System is a backend application that simulates core banking ledger fu
 |---|---|
 | **Node.js** | Runtime environment |
 | **Express.js** | Web framework & routing |
+| **cookie-parser** | Cookie-based authentication support |
 | **JavaScript** | Core language |
 
 ---
@@ -63,7 +68,6 @@ npm install
 ### Running the Server
 
 ```bash
-# Start the server
 node server.js
 ```
 
@@ -75,12 +79,65 @@ The server will start on `http://localhost:3000` (or the configured port).
 
 ```
 ledger-system/
-├── src/                  # Core application logic
-├── server.js             # Entry point — initializes and starts the server
-├── package.json          # Project metadata and dependencies
-├── jsconfig.json         # JavaScript configuration
+├── src/
+│   ├── controllers/
+│   │   ├── auth.controller.js
+│   │   ├── account.controller.js
+│   │   └── transaction.controller.js
+│   ├── routes/
+│   │   ├── auth.routes.js
+│   │   ├── account.routes.js
+│   │   └── transaction.routes.js
+│   └── middlewares/
+│       └── auth.middleware.js
+├── server.js
+├── package.json
+├── jsconfig.json
 └── .gitignore
 ```
+
+---
+
+## API Endpoints
+
+### Auth — `/api/auth`
+
+| Method | Endpoint | Auth Required | Description |
+|--------|----------|:---:|-------------|
+| `POST` | `/api/auth/register` | ❌ | Register a new user |
+| `POST` | `/api/auth/login` | ❌ | Login and receive auth cookie |
+| `POST` | `/api/auth/logout` | ❌ | Logout and clear auth cookie |
+
+---
+
+### Accounts — `/api/accounts`
+
+| Method | Endpoint | Auth Required | Description |
+|--------|----------|:---:|-------------|
+| `POST` | `/api/accounts` | ✅ | Create a new bank account |
+| `GET` | `/api/accounts` | ✅ | Get all accounts for the logged-in user |
+| `GET` | `/api/accounts/balance/:accountId` | ✅ | Get balance of a specific account |
+
+---
+
+### Transactions — `/api/transactions`
+
+| Method | Endpoint | Auth Required | Description |
+|--------|----------|:---:|-------------|
+| `POST` | `/api/transactions` | ✅ User | Create a new transaction |
+| `POST` | `/api/transactions/system/initial-funds` | ✅ System | Seed initial funds into an account (system only) |
+
+---
+
+## Contributing
+
+Contributions are welcome! Feel free to open issues or submit pull requests.
+
+1. Fork the repository
+2. Create a new branch (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m 'Add your feature'`)
+4. Push to the branch (`git push origin feature/your-feature`)
+5. Open a Pull Request
 
 ---
 
